@@ -23,12 +23,7 @@ jobs:
 
       - name: Create Android project structure
         run: |
-          flutter create --platforms=android --org com.example fire_exam_temp
-          cp -r fire_exam_temp/android/* android/
-          rm -rf fire_exam_temp
-
-      - name: Clean build
-        run: flutter clean
+          flutter create --platforms=android --org com.example --project-directory=. .
 
       - name: Install dependencies
         run: flutter pub get
