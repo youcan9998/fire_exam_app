@@ -5,55 +5,48 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'question.dart';
 
 class ExamState extends ChangeNotifier {
-  List<Question> _questions = [];
-  List<Question> _currentQuestions = [];
-  int _currentIndex = 0;
-  List<String> _selectedAnswers = [];
-  List<Question> _wrongAnswers = [];
-  int _totalAnswered = 0;
-  int _totalCorrect = 0;
-  bool _isLoading = true;
-  int _examDuration = 60; // minutes
-  bool _isExamMode = false;
-  int _timeRemaining = 0; // seconds
+  List<Question> questions = [];
+  List<Question> currentQuestions = [];
+  int currentIndex = 0;
+  List<String> selectedAnswers = [];
+  List<Question> wrongAnswers = [];
+  int totalAnswered = 0;
+  int totalCorrect = 0;
+  bool isLoading = true;
+  int examDuration = 60;
+  bool isExamMode = false;
+  int timeRemaining = 0;
 
-  // Getters
-  List<Question> get questions => _questions;
-  List<Question> get currentQuestions => _currentQuestions;
-  int get currentIndex => _currentIndex;
-  List<String> get selectedAnswers => _selectedAnswers;
-  List<Question> get wrongAnswers => _wrongAnswers;
-  int get totalAnswered => _totalAnswered;
-  int get totalCorrect => _totalCorrect;
-  bool get isLoading => _isLoading;
-  int get examDuration => _examDuration;
-  bool get isExamMode => _isExamMode;
-  int get timeRemaining => _timeRemaining;
+  double get correctRate {
+    if (totalAnswered == 0) return 0;
+    return totalCorrect / totalAnswered;
+  }
 
-  Question? get currentQuestion =>
-      _currentIndex < _currentQuestions.length ? _currentQuestions[_currentIndex] : null;
-
-  double get correctRate => _totalAnswered > 0 ? _totalCorrect / _totalAnswered : 0;
+  Question? get currentQuestion {
+    if (currentQuestions.isEmpty) return null;
+    if (currentIndex < 0) return null;
+    if (currentIndex >= currentQuestions.length) return null;
+    return currentQuestions[currentIndex];
+  }
 
   Future<void> loadQuestions() async {
-    _isLoading = true;
+    isLoading = true;
     notifyListeners();
 
     try {
-      // Load from JSON file in assets
       final jsonString = await rootBundle.loadString('assets/questions.json');
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      
-      _questions = jsonList.asMap().entries.map((entry) {
+
+      questions = jsonList.asMap().entries.map((entry) {
         return Question.fromJson(entry.value, entry.key);
       }).toList();
-      
-      _isLoading = false;
+
+      isLoading = false;
       await _loadStats();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading questions: $e');
-      _isLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
@@ -61,14 +54,13 @@ class ExamState extends ChangeNotifier {
   Future<void> _loadStats() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _totalAnswered = prefs.getInt('totalAnswered') ?? 0;
-      _totalCorrect = prefs.getInt('totalCorrect') ?? 0;
+      totalAnswered = prefs.getInt('totalAnswered') ?? 0;
+      totalCorrect = prefs.getInt('totalCorrect') ?? 0;
 
-      // Load wrong answers
       final wrongJson = prefs.getString('wrongAnswers');
       if (wrongJson != null) {
         final List<dynamic> wrongList = jsonDecode(wrongJson);
-        _wrongAnswers = wrongList.asMap().entries.map((entry) {
+        wrongAnswers = wrongList.asMap().entries.map((entry) {
           return Question.fromJson(entry.value, entry.key);
         }).toList();
       }
@@ -80,11 +72,10 @@ class ExamState extends ChangeNotifier {
   Future<void> _saveStats() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('totalAnswered', _totalAnswered);
-      await prefs.setInt('totalCorrect', _totalCorrect);
+      await prefs.setInt('totalAnswered', totalAnswered);
+      await prefs.setInt('totalCorrect', totalCorrect);
 
-      // Save wrong answers
-      final wrongJson = jsonEncode(_wrongAnswers.map((q) => q.toJson()).toList());
+      final wrongJson = jsonEncode(wrongAnswers.map((q) => q.toJson()).toList());
       await prefs.setString('wrongAnswers', wrongJson);
     } catch (e) {
       debugPrint('Error saving stats: $e');
@@ -92,78 +83,75 @@ class ExamState extends ChangeNotifier {
   }
 
   void startPractice() {
-    _isExamMode = false;
-    _currentQuestions = List.from(_questions);
-    _currentQuestions.shuffle();
-    _currentIndex = 0;
-    _selectedAnswers = [];
+    isExamMode = false;
+    currentQuestions = List.from(questions);
+    currentQuestions.shuffle();
+    currentIndex = 0;
+    selectedAnswers = [];
     notifyListeners();
   }
 
   void startExam({int questionCount = 50, int durationMinutes = 60}) {
-    _isExamMode = true;
-    _examDuration = durationMinutes;
-    _timeRemaining = durationMinutes * 60;
+    isExamMode = true;
+    examDuration = durationMinutes;
+    timeRemaining = durationMinutes * 60;
 
-    // Random select questions
-    _currentQuestions = List.from(_questions);
-    _currentQuestions.shuffle();
-    if (_currentQuestions.length > questionCount) {
-      _currentQuestions = _currentQuestions.sublist(0, questionCount);
+    currentQuestions = List.from(questions);
+    currentQuestions.shuffle();
+    if (currentQuestions.length > questionCount) {
+      currentQuestions = currentQuestions.sublist(0, questionCount);
     }
 
-    _currentIndex = 0;
-    _selectedAnswers = [];
+    currentIndex = 0;
+    selectedAnswers = [];
     notifyListeners();
   }
 
   void selectAnswer(String option) {
-    if (_currentQuestion == null) return;
+    final q = currentQuestion;
+    if (q == null) return;
 
-    if (_currentQuestion!.isMultiple) {
-      // 多选题：切换选择状态
-      if (_selectedAnswers.contains(option)) {
-        _selectedAnswers.remove(option);
+    if (q.isMultiple) {
+      if (selectedAnswers.contains(option)) {
+        selectedAnswers.remove(option);
       } else {
-        _selectedAnswers.add(option);
+        selectedAnswers.add(option);
       }
     } else {
-      // 单选题：直接选中
-      _selectedAnswers = [option];
+      selectedAnswers = [option];
     }
     notifyListeners();
   }
 
   void nextQuestion() {
-    if (_currentIndex < _currentQuestions.length - 1) {
-      _currentIndex++;
-      _selectedAnswers = [];
+    if (currentIndex < currentQuestions.length - 1) {
+      currentIndex++;
+      selectedAnswers = [];
       notifyListeners();
     }
   }
 
   void previousQuestion() {
-    if (_currentIndex > 0) {
-      _currentIndex--;
-      _selectedAnswers = [];
+    if (currentIndex > 0) {
+      currentIndex--;
+      selectedAnswers = [];
       notifyListeners();
     }
   }
 
   Future<void> submitAnswer() async {
-    if (_currentQuestion == null || _selectedAnswers.isEmpty) return;
+    final q = currentQuestion;
+    if (q == null || selectedAnswers.isEmpty) return;
 
-    final isCorrect = _currentQuestion!.checkAnswer(_selectedAnswers);
+    final isCorrect = q.checkAnswer(selectedAnswers);
 
-    // Update stats
-    _totalAnswered++;
+    totalAnswered++;
     if (isCorrect) {
-      _totalCorrect++;
+      totalCorrect++;
     } else {
-      // Add to wrong answers if not already there
-      final exists = _wrongAnswers.any((q) => q.id == _currentQuestion!.id);
+      final exists = wrongAnswers.any((w) => w.id == q.id);
       if (!exists) {
-        _wrongAnswers.add(_currentQuestion!);
+        wrongAnswers.add(q);
       }
     }
 
@@ -172,37 +160,35 @@ class ExamState extends ChangeNotifier {
   }
 
   void tick() {
-    if (_isExamMode && _timeRemaining > 0) {
-      _timeRemaining--;
+    if (isExamMode && timeRemaining > 0) {
+      timeRemaining--;
       notifyListeners();
     }
   }
 
   Future<void> finishExam() async {
-    _isExamMode = false;
+    isExamMode = false;
     await _saveStats();
     notifyListeners();
   }
 
   void clearWrongAnswers() {
-    _wrongAnswers = [];
+    wrongAnswers = [];
     _saveStats();
     notifyListeners();
   }
 
-  // Start reviewing wrong answers
   void startWrongAnswersReview() {
-    _isExamMode = false;
-    _currentQuestions = List.from(_wrongAnswers);
-    _currentIndex = 0;
-    _selectedAnswers = [];
+    isExamMode = false;
+    currentQuestions = List.from(wrongAnswers);
+    currentIndex = 0;
+    selectedAnswers = [];
     notifyListeners();
   }
 
-  // Reset current session
   void resetSession() {
-    _currentIndex = 0;
-    _selectedAnswers = [];
+    currentIndex = 0;
+    selectedAnswers = [];
     notifyListeners();
   }
 }
