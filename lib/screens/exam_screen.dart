@@ -364,7 +364,6 @@ class _ExamScreenState extends State<ExamScreen> {
   }
 
   void _showSubmitDialog() {
-    final examState = Provider.of<ExamState>(context, listen: false);
     int unanswered = 0;
     for (var answer in _answers) {
       if ((answer['selected'] as List).isEmpty) {
