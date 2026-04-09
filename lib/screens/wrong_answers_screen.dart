@@ -259,10 +259,7 @@ class WrongAnswersScreen extends StatelessWidget {
       return;
     }
 
-    examState.currentQuestions = List.from(examState.wrongAnswers);
-    examState.currentIndex = 0;
-    examState.selectedAnswers = [];
-    examState.isExamMode = false;
+    examState.startWrongAnswersReview();
     Navigator.pushNamed(context, '/practice');
   }
 }
