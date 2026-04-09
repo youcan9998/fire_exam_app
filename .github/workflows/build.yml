@@ -27,6 +27,9 @@ jobs:
           cp -r temp_project/android android
           rm -rf temp_project
 
+      - name: Fix Kotlin version
+        run: sed -i 's/1\.7\.10/1.9.22/g' android/settings.gradle
+
       - name: Install dependencies
         run: flutter pub get
 
