@@ -173,7 +173,7 @@ class StatsScreen extends StatelessWidget {
                         children: [
                           const Text('题库完成度'),
                           Text(
-                            '${(examState.questions.length > 0 ? (examState.wrongAnswers.length / examState.questions.length * 100).clamp(0, 100) : 0).toStringAsFixed(1)}%',
+                            '${(examState.questions.isNotEmpty ? (examState.wrongAnswers.length / examState.questions.length * 100).clamp(0, 100) : 0).toStringAsFixed(1)}%',
                             style: TextStyle(
                               color: Colors.green.shade700,
                               fontWeight: FontWeight.bold,
@@ -185,7 +185,7 @@ class StatsScreen extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
-                          value: examState.questions.length > 0
+                          value: examState.questions.isNotEmpty
                               ? (examState.wrongAnswers.length / examState.questions.length).clamp(0.0, 1.0)
                               : 0,
                           backgroundColor: Colors.grey.shade200,
