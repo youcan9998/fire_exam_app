@@ -113,7 +113,7 @@ class HomeScreen extends StatelessWidget {
                             title: '错题本',
                             subtitle: '查看并练习错题',
                             color: Colors.red,
-                            badge: examState.wrongAnswers.length > 0
+                            badge: examState.wrongAnswers.isNotEmpty
                                 ? '${examState.wrongAnswers.length}'
                                 : null,
                             onTap: () {
