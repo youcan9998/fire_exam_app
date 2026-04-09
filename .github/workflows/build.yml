@@ -23,7 +23,9 @@ jobs:
 
       - name: Create Android project structure
         run: |
-          flutter create --platforms=android --org com.example --project-directory=. .
+          flutter create --platforms=android --org com.example temp_project
+          cp -r temp_project/android android
+          rm -rf temp_project
 
       - name: Install dependencies
         run: flutter pub get
