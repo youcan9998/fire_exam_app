@@ -190,6 +190,15 @@ class ExamState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Start reviewing wrong answers
+  void startWrongAnswersReview() {
+    _isExamMode = false;
+    _currentQuestions = List.from(_wrongAnswers);
+    _currentIndex = 0;
+    _selectedAnswers = [];
+    notifyListeners();
+  }
+
   // Reset current session
   void resetSession() {
     _currentIndex = 0;
